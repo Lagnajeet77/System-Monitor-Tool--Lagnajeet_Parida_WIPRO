@@ -1,29 +1,3 @@
-// sysmon.cpp
-// Simple system monitor for Linux using /proc and ncurses.
-// Features implemented (Day-wise):
-// Day 1: UI layout (ncurses) and gather system data via /proc
-// Day 2: Display process list with CPU and memory usage
-// Day 3: Sorting by CPU, Memory, PID
-// Day 4: Kill selected process (SIGTERM / SIGKILL) with confirmation
-// Day 5: Real-time updates with configurable refresh interval
-//
-// Build:
-//   g++ -std=c++17 sysmon.cpp -lncurses -o sysmon
-//
-// Usage:
-//   ./sysmon [refresh_seconds]
-//   Example: ./sysmon 2
-//
-// Key bindings:
-//   Up/Down   : move selection
-//   PageUp/Down : page scroll
-//   s         : toggle sort (CPU -> MEM -> PID)
-//   k         : kill selected process
-//   r         : refresh immediately
-//   q         : quit
-//
-// Note: Intended for Linux systems with /proc. Killing processes requires permissions.
-
 #include <ncurses.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -60,7 +34,7 @@ struct ProcInfo {
     size_t mem_kb = 0;
     double mem_percent = 0.0;
     ProcTimes times;
-    unsigned long long total_time = 0; // utime+stime
+    unsigned long long total_time = 0; 
 };
 
 enum SortMode { SORT_CPU=0, SORT_MEM=1, SORT_PID=2 };
@@ -135,7 +109,7 @@ bool read_proc_times(int pid, ProcTimes &pt, unsigned long long &rss_kb, string 
     pt.utime = utime;
     pt.stime = stime;
 
-    // read uid from /proc/[pid]/status
+   
     string sfn2 = "/proc/" + to_string(pid) + "/status";
     ifstream f2(sfn2);
     uid = (uid_t)-1;
@@ -309,7 +283,7 @@ bool confirm_kill(WINDOW* win, int pid) {
     delwin(dlg);
     if (do_kill) {
         if (kill(pid, sig) == 0) {
-            // success dialog
+            
             WINDOW* ok = newwin(3, 40, (rows-3)/2, (cols-40)/2);
             box(ok,0,0);
             mvwprintw(ok,1,2, "Signal %d sent to PID %d", sig, pid);
@@ -339,17 +313,17 @@ int main(int argc, char** argv) {
         try { refresh_sec = stoi(argv[1]); if (refresh_sec < 1) refresh_sec = 1; } catch(...) { refresh_sec = 2; }
     }
 
-    // initialize ncurses
+    
     initscr();
     noecho();
     cbreak();
     curs_set(0);
     keypad(stdscr, TRUE);
-    nodelay(stdscr, TRUE); // non-blocking input
+    nodelay(stdscr, TRUE);
     int rows, cols;
     getmaxyx(stdscr, rows, cols);
 
-    // create windows: header (3 lines) and body (rest)
+    
     int header_h = 3;
     WINDOW* header = newwin(header_h, cols, 0, 0);
     WINDOW* body = newwin(rows - header_h, cols, header_h, 0);
@@ -374,7 +348,7 @@ int main(int argc, char** argv) {
     auto last_refresh = steady_clock::now() - seconds(refresh_sec);
 
     while (running) {
-        // handle input
+        
         int ch = getch();
         if (ch != ERR) {
             if (ch == 'q' || ch == 'Q') { running = false; break; }
@@ -394,40 +368,33 @@ int main(int argc, char** argv) {
                 last_refresh = steady_clock::now() - seconds(refresh_sec); // force immediate refresh in next loop
             }
             else if (ch == 'k' || ch == 'K') {
-                // perform kill on selected process if valid
-                // find selected pid from current vector
-                // We'll build a vector view below; so set a flag to trigger kill after refresh to avoid race
-                // For simplicity, attempt kill immediately if we have cur_procs
+               
                 vector<ProcInfo> pv;
                 for (auto &kv : cur_procs) pv.push_back(kv.second);
                 sort_processes(pv, sort_mode);
                 if (selected >= 0 && selected < (int)pv.size()) {
                     int pid = pv[selected].pid;
                     confirm_kill(stdscr, pid);
-                    // after kill, force refresh
+                    
                     last_refresh = steady_clock::now() - seconds(refresh_sec);
                 }
             }
         }
 
-        // refresh periodically
         auto now = steady_clock::now();
         if (now - last_refresh >= seconds(refresh_sec)) {
-            // read CPU totals
+           
             read_total_cpu(cur_cpu_fields);
             unsigned long long cur_total_cpu = total_cpu_time(cur_cpu_fields);
 
-            // read meminfo
+        
             read_meminfo(mem_total_kb, mem_free_kb, mem_available_kb);
 
-            // collect processes
+        
             collect_processes(cur_procs, mem_total_kb);
-
-            // compute per-process cpu percent
             update_cpu_percent(old_procs, cur_procs, old_total_cpu, cur_total_cpu);
 
-            // compute approximate total_cpu_percent as (1 - idle_delta/total_delta)*100
-            // idle is field 3 (idle) + 4 (iowait) in /proc/stat fields, but we used total sum - approximate:
+            
             unsigned long long old_idle = 0, cur_idle = 0;
             if (old_cpu_fields.size() >= 4) old_idle = old_cpu_fields[3] + (old_cpu_fields.size() > 4 ? old_cpu_fields[4] : 0);
             if (cur_cpu_fields.size() >= 4) cur_idle = cur_cpu_fields[3] + (cur_cpu_fields.size() > 4 ? cur_cpu_fields[4] : 0);
@@ -436,35 +403,33 @@ int main(int argc, char** argv) {
             if (total_delta == 0) total_delta = 1;
             total_cpu_percent = 100.0 * (1.0 - ((double)idle_delta / (double)total_delta));
 
-            // prepare vector view
+          
             vector<ProcInfo> pv;
             pv.reserve(cur_procs.size());
             for (auto &kv : cur_procs) pv.push_back(kv.second);
-
-            // compute mem_percent updated (in case mem_total changed)
             for (auto &p : pv) {
                 if (mem_total_kb > 0) p.mem_percent = 100.0 * (double)p.mem_kb / (double)mem_total_kb;
                 else p.mem_percent = 0.0;
             }
 
-            // sort
+      
             sort_processes(pv, sort_mode);
 
-            // adjust selected bounds
+  
             if (selected >= (int)pv.size()) selected = max(0, (int)pv.size()-1);
             if (selected < 0) selected = 0;
 
-            // adjust page offset to keep selected visible
+    
             int body_rows = getmaxy(body) - 3;
             if (body_rows < 1) body_rows = 1;
             if (selected < page_offset) page_offset = selected;
             else if (selected >= page_offset + body_rows) page_offset = selected - body_rows + 1;
 
-            // draw header & processes
+         
             draw_header(header, mem_total_kb, total_cpu_percent, refresh_sec, sort_mode);
             draw_processes(body, pv, selected, page_offset);
 
-            // swap old<->cur
+        
             old_procs = cur_procs;
             old_cpu_fields = cur_cpu_fields;
             old_total_cpu = total_cpu_time(old_cpu_fields);
@@ -472,11 +437,9 @@ int main(int argc, char** argv) {
             last_refresh = now;
         }
 
-        // small sleep to avoid busy loop
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    // cleanup
     delwin(header);
     delwin(body);
     endwin();

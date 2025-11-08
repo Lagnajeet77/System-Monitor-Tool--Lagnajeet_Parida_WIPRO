@@ -10,10 +10,15 @@ TASKS GIVEN:
 A single-file C++ system monitor for Linux that reads data from /proc and displays a terminal UI using ncurses. Implements your five-day plan:
 
 Day 1: UI layout and system data via /proc
+
 Day 2: Process list with CPU and memory
+
 Day 3: Sorting by CPU / Memory / PID
+
 Day 4: Kill processes (SIGTERM / SIGKILL) from UI
+
 Day 5: Real-time refresh (configurable interval)
+
 How I Built It:
 
 Installed Ubantu and compiled all the codes in the command propmt Installed ncurses on Ubuntu

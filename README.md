@@ -1,5 +1,5 @@
 
-SysMon - Simple Linux System Monitor (C++, ncurses)
+SysMon - Simple Monitor Tool (C++, ncurses)
 ==================================================
 
 

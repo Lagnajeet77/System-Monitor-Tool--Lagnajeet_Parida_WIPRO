@@ -2,54 +2,33 @@
 SysMon - Simple Linux System Monitor (C++, ncurses)
 ==================================================
 
-What it is
-----------
-A single-file C++ system monitor for Linux that reads data from /proc and displays a terminal UI using ncurses.
-Implements your five-day plan:
-- Day 1: UI layout and system data via /proc
-- Day 2: Process list with CPU and memory
-- Day 3: Sorting by CPU / Memory / PID
-- Day 4: Kill processes (SIGTERM / SIGKILL) from UI
-- Day 5: Real-time refresh (configurable interval)
 
-Files
------
-- sysmon.cpp     : Main program (C++17, ncurses)
-- Makefile       : simple build helper
-- README.md      : this file
-- LICENSE        : MIT license
+Lagnajeet Parida-2241016197_BATCH-8
 
-Build
------
-You need a Linux system with g++ and ncurses.
-Install ncurses on Debian/Ubuntu:
-  sudo apt-get install libncurses5-dev libncursesw5-dev
+TASKS GIVEN:
 
-Build:
-  make
+A single-file C++ system monitor for Linux that reads data from /proc and displays a terminal UI using ncurses. Implements your five-day plan:
 
-Or:
-  g++ -std=c++17 sysmon.cpp -lncurses -o sysmon
+Day 1: UI layout and system data via /proc
+Day 2: Process list with CPU and memory
+Day 3: Sorting by CPU / Memory / PID
+Day 4: Kill processes (SIGTERM / SIGKILL) from UI
+Day 5: Real-time refresh (configurable interval)
+How I Built It:
 
-Usage
------
-  ./sysmon [refresh_seconds]
+Installed Ubantu and compiled all the codes in the command propmt Installed ncurses on Ubuntu
 
-Examples:
-  ./sysmon
-  ./sysmon 1
+Controls Added:
 
-Controls
---------
-- Up / Down arrows : move selection
-- PageUp / PageDown : page scroll
-- s : toggle sort (CPU -> MEM -> PID)
-- k : kill selected process (choose t=SIGTERM or k=SIGKILL)
-- r : refresh immediately
-- q : quit
+1- Up / Down arrows : move selection
 
-Notes and safety
-----------------
-- This tool parses /proc (Linux only).
-- Killing processes requires appropriate permissions. Do not run as root unless you understand the risks.
-- The CPU percentage calculation is approximate (based on /proc stat deltas).
+2- PageUp / PageDown : page scroll
+
+3- s : toggle sort (CPU -> MEM -> PID)
+
+4- k : kill selected process (choose t=SIGTERM or k=SIGKILL)
+
+5- r : refresh immediately
+
+6- q : quit
+
